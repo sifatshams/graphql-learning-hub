@@ -1,4 +1,5 @@
 import { ApolloServer, gql } from 'apollo-server-express';
+import axios from 'axios';
 import 'dotenv/config';
 import express from 'express';
 
@@ -7,30 +8,71 @@ const typeDefs = gql`
   type User {
     id: ID!
     name: String!
+    username: String!
     email: String!
+    phone: String!
+    website: String!
+  }
+
+  type Todo {
+    id: ID!
+    userId: ID!
+    title: String!
+    completed: Boolean!
+    user: User
   }
 
   type Query {
-    users: [User!]!
-    user(id: ID!): User
+    getUsers: [User!]!
+    getUser(id: ID!): User
+    getTodos: [Todo!]!
+    getTodo(id: ID!): Todo
   }
 `;
-
-// dummy db
-const userData = [
-  { id: '1', name: 'Sifat Bin Anwar', email: 'sifatbin.official@gmail.com' },
-  { id: '2', name: 'Karim Uddin', email: 'karim93@gmail.com' },
-];
 
 // Resolvers
 const resolvers = {
   Query: {
-    // get all users query
-    users: () => userData,
+    // get all users
+    getUsers: async () => {
+      const response = await axios.get(
+        'https://jsonplaceholder.typicode.com/users',
+      );
+      return response.data;
+    },
 
-    // exact user query by id
-    user: (_: any, args: { id: string }) => {
-      return userData.find((user) => user.id === args.id);
+    // get user by id
+    getUser: async (_: any, args: { id: string }) => {
+      const response = await axios.get(
+        `https://jsonplaceholder.typicode.com/users/${args.id}`,
+      );
+      return response.data;
+    },
+
+    // get all todos
+    getTodos: async () => {
+      const response = await axios.get(
+        'https://jsonplaceholder.typicode.com/todos',
+      );
+      return response.data;
+    },
+
+    // get todo by id
+    getTodo: async (_: any, args: { id: string }) => {
+      const response = await axios.get(
+        `https://jsonplaceholder.typicode.com/todos/${args.id}`,
+      );
+      response.data;
+    },
+  },
+
+  // nested resolvers
+  Todo: {
+    user: async (parent: { userId: string }) => {
+      const response = await axios.get(
+        `https://jsonplaceholder.typicode.com/users/${parent.userId}`,
+      );
+      return response.data;
     },
   },
 };
